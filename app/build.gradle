@@ -38,12 +38,18 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.navigation:navigation-fragment:2.3.5'
     implementation 'androidx.navigation:navigation-ui:2.3.5'
-    implementation "androidx.core:core-ktx:1.5.0"
     implementation 'com.google.android.material:material:1.4.0-rc01'
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
 
     api common.timber
     api common.glide
+
+    api androidx.core
+    api androidx.lifecycle
+    api androidx.viewmodel
+    api androidx.livedata
+
+    api androidx.recyclerview
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
