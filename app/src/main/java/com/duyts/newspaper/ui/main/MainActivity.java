@@ -62,7 +62,7 @@ public class MainActivity extends BaseActivity {
         super.initListener();
         viewBinding.addFloatingAction.setOnClickListener(v -> {
             new Thread(() -> {
-                for (int i = 0; i < 10000; i++) {
+                for (int i = 0; i < 10; i++) {
                     String randomString = listUrl.get(Random.Default.nextInt(listUrl.size()));
                     viewModel.addLink(randomString);
                 }

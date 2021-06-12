@@ -28,6 +28,8 @@ public class MainActivityViewModel extends ViewModel {
 
     private static final int ADD_ITEM_CODE = 10001;
     private static final int ADD_ITEM_BY_STRING_CODE = 10002;
+    private static final int REMOVE_RANDOM_CODE = 10003;
+    private static final int REMOVE_ALL_CODE = 10004;
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
@@ -46,12 +48,28 @@ public class MainActivityViewModel extends ViewModel {
         backgroundHandler = new Handler(handlerThread.getLooper(), new Handler.Callback() {
             @Override
             public boolean handleMessage(@NonNull Message msg) {
-                if (msg.what == ADD_ITEM_CODE) {
-                    runOnUiThread(() -> {
-                        sortedLinks.add((LinkModel) msg.obj);
-                    });
-                } else if (msg.what == ADD_ITEM_BY_STRING_CODE) {
-                    getLinkInfo((String) msg.obj);
+                switch (msg.what) {
+                    case ADD_ITEM_CODE:
+                        runOnUiThread(() -> {
+                            sortedLinks.add((LinkModel) msg.obj);
+                        });
+                        break;
+                    case ADD_ITEM_BY_STRING_CODE:
+                        getLinkInfo((String) msg.obj);
+                        break;
+                    case REMOVE_ALL_CODE:
+                        runOnUiThread(() -> {
+                            sortedLinks.clear();
+                            sortedLinksMutableLiveData.setValue(sortedLinks);
+                        });
+                        break;
+                    case REMOVE_RANDOM_CODE:
+                        runOnUiThread(() -> {
+                            int random = Random.Default.nextInt(sortedLinks.size());
+                            sortedLinks.removeItemAt(random);
+                            sortedLinksMutableLiveData.setValue(sortedLinks);
+                        });
+                        break;
                 }
                 return false;
             }
@@ -113,9 +131,6 @@ public class MainActivityViewModel extends ViewModel {
 
     public void addLink(String link) {
         Timber.w(link);
-//        executorService.execute(() -> {
-//            getLinkInfo(link);
-//        });
         sendMessage(ADD_ITEM_BY_STRING_CODE, link);
     }
 
@@ -125,14 +140,11 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     public void removeRandom() {
-        int random = Random.Default.nextInt(sortedLinks.size());
-        sortedLinks.removeItemAt(random);
-        sortedLinksMutableLiveData.setValue(sortedLinks);
+        sendEmptyMessage(REMOVE_RANDOM_CODE);
     }
 
     public void removeAll() {
-        sortedLinks.clear();
-        sortedLinksMutableLiveData.setValue(sortedLinks);
+        sendEmptyMessage(REMOVE_ALL_CODE);
     }
 
 
@@ -204,6 +216,12 @@ public class MainActivityViewModel extends ViewModel {
         Message msg = new Message();
         msg.what = code;
         msg.obj = o;
+        backgroundHandler.sendMessage(msg);
+    }
+
+    private void sendEmptyMessage(int code) {
+        Message msg = new Message();
+        msg.what = code;
         backgroundHandler.sendMessage(msg);
     }
 }
