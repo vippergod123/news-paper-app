@@ -1,8 +1,12 @@
 package com.duyts.newspaper.ui.main;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -13,50 +17,63 @@ import com.duyts.newspaper.MainApplication;
 import com.duyts.newspaper.adapter.LinksAdapter;
 import com.duyts.newspaper.model.LinkModel;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import kotlin.random.Random;
 import timber.log.Timber;
 
+import static androidx.recyclerview.widget.SortedList.INVALID_POSITION;
+
 public class MainActivityViewModel extends ViewModel {
 
     private static final int ADD_ITEM_CODE = 10001;
-    private static final int ADD_ITEM_BY_STRING_CODE = 10002;
+    private static final int GET_ITEM_INFO_CODE = 10002;
+    private static final int REMOVE_RANDOM_CODE = 10003;
+    private static final int REMOVE_ALL_CODE = 10004;
+
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
     private final Handler handler;
     private final LinksAdapter adapter;
-//    private final ExecutorService executorService;
+    private final ExecutorService executorService;
 
     private final HandlerThread handlerThread;
     private final Handler backgroundHandler;
 
     public MainActivityViewModel() {
-//        executorService = Executors.newFixedThreadPool(50);
+        executorService = Executors.newSingleThreadExecutor();
 
         handlerThread = new HandlerThread(MainActivityViewModel.class.getSimpleName());
         handlerThread.start();
         backgroundHandler = new Handler(handlerThread.getLooper(), new Handler.Callback() {
             @Override
             public boolean handleMessage(@NonNull Message msg) {
-                if (msg.what == ADD_ITEM_CODE) {
-                    runOnUiThread(() -> {
-                        sortedLinks.add((LinkModel) msg.obj);
-                    });
-                }
-                else if (msg.what == ADD_ITEM_BY_STRING_CODE) {
-                    getLinkInfo((String) msg.obj);
+                int code = msg.what;
+                switch (code) {
+                    case ADD_ITEM_CODE:
+                        LinkModel res = (LinkModel) msg.obj;
+                        runOnUiThread(() -> {
+                            addOrUpdate(res);
+                            sortedLinksMutableLiveData.setValue(sortedLinks);
+                        });
+                        break;
+                    case GET_ITEM_INFO_CODE:
+                        getLinkInfoWebView((String) msg.obj);
+                        break;
+                    case REMOVE_RANDOM_CODE:
+                        removeRandomInternal();
+                        break;
+                    case REMOVE_ALL_CODE:
+                        removeAllInternal();
+                        break;
                 }
                 return false;
             }
         });
+
         handler = new Handler();
         sortedLinks = new SortedList<>(
                 LinkModel.class,
@@ -79,6 +96,9 @@ public class MainActivityViewModel extends ViewModel {
 
                     @Override
                     public int compare(LinkModel o1, LinkModel o2) {
+                        if (o1 == null || o2 == null) {
+                            return 1;
+                        }
                         return o1.getTitle().compareTo(o2.getTitle());
                     }
 
@@ -94,7 +114,7 @@ public class MainActivityViewModel extends ViewModel {
 
                     @Override
                     public boolean areItemsTheSame(LinkModel item1, LinkModel item2) {
-                        return item1.equals(item2);
+                        return item1.getId().equals(item2.getId());
                     }
                 }
         );
@@ -113,11 +133,7 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     public void addLink(String link) {
-        Timber.w(link);
-//        executorService.execute(() -> {
-//            getLinkInfo(link);
-//        });
-        sendMessage(ADD_ITEM_BY_STRING_CODE, link);
+        sendMessage(GET_ITEM_INFO_CODE, link);
     }
 
     public void removeLinkAt(int pos) {
@@ -126,60 +142,129 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     public void removeRandom() {
-        int random = Random.Default.nextInt(sortedLinks.size());
-        sortedLinks.removeItemAt(random);
-        sortedLinksMutableLiveData.setValue(sortedLinks);
+        sendEmptyMessage(REMOVE_RANDOM_CODE);
+    }
+
+    private void removeRandomInternal() {
+        runOnUiThread(() -> {
+            int random = Random.Default.nextInt(sortedLinks.size());
+            sortedLinks.removeItemAt(random);
+            sortedLinksMutableLiveData.setValue(sortedLinks);
+        });
+
     }
 
     public void removeAll() {
-        sortedLinks.clear();
-        sortedLinksMutableLiveData.setValue(sortedLinks);
+        sendEmptyMessage(REMOVE_ALL_CODE);
+    }
+
+    private void removeAllInternal() {
+        runOnUiThread(() -> {
+            sortedLinks.clear();
+            sortedLinksMutableLiveData.setValue(sortedLinks);
+        });
+    }
+
+    @SuppressLint("JavascriptInterface")
+    private void getLinkInfoWebView(String link) {
+        final LinkModel res = new LinkModel(link);
+        WebView browser = new WebView(MainApplication.getAppContext());
+        browser.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onReceivedIcon(WebView view, Bitmap icon) {
+                super.onReceivedIcon(view, icon);
+                res.setImageBitMap(icon);
+                sendMessage(ADD_ITEM_CODE, res);
+            }
+
+            @Override
+            public void onReceivedTitle(WebView view, String title) {
+                super.onReceivedTitle(view, title);
+                res.setTitle(title);
+                sendMessage(ADD_ITEM_CODE, res);
+            }
+        });
+        browser.loadUrl(link);
     }
 
 
-    private void getLinkInfo(String link) {
-        InputStream response = null;
-        try {
-            response = new URL(link).openStream();
-            Scanner scanner = new Scanner(response);
-            String responseBody = scanner.useDelimiter("\\A").next();
-            String pageTitle = getPageTitle(responseBody);
-            String pageImage = getPageImage(link, responseBody);
-            LinkModel res = new LinkModel(link, pageTitle, pageImage);
-//            sendMessage(res);
-            runOnUiThread(() -> {
-                sortedLinks.add(res);
-                sortedLinksMutableLiveData.setValue(sortedLinks);
-            });
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            try {
-                if (response != null) {
-                    response.close();
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+    private synchronized void addOrUpdate(LinkModel res) {
+
+        int pos = sortedLinks.indexOf(res);
+        if (pos == INVALID_POSITION) {
+            sortedLinks.add(res);
+        } else {
+            sortedLinks.updateItemAt(pos, res);
         }
     }
+//    private void getLinkInfo(String link) {
+//        BufferedReader in = null;
+//        try {
+//
+////            response = new URL(link).openStream();
+////            Scanner scanner = new Scanner(response);
+////            String responseBody = scanner.useDelimiter("\\A").next();
+//
+//            URL google = new URL(link);
+//            in = new BufferedReader(new InputStreamReader(google.openStream()));
+//            String input;
+//            StringBuilder stringBuffer = new StringBuilder();
+//            while ((input = in.readLine()) != null) {
+//                stringBuffer.append(input);
+//            }
+//
+//            String responseBody = stringBuffer.toString();
+//            String pageTitle = getPageTitle(responseBody);
+//            String pageImage = getPageImage(link, responseBody);
+//            LinkModel res = new LinkModel(link, pageTitle, pageImage);
+////            sendMessage(res);
+//            runOnUiThread(() -> {
+//                sortedLinks.add(res);
+//                sortedLinksMutableLiveData.setValue(sortedLinks);
+//            });
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        } finally {
+//            try {
+//                if (in != null) {
+//                    in.close();
+//                }
+//            } catch (IOException ex) {
+//                ex.printStackTrace();
+//            }
+//        }
+//    }
 
     private String getPageTitle(String body) {
-        String pattern = "<meta property=\"og:description\" content=\"";
-        int start = body.indexOf(pattern) + 41;
-        int end = body.indexOf("\"", start);
-        return body.substring(start, end);
+        try {
+            String pattern = "<meta property=\"og:description\" content=\"";
+            int start = body.indexOf(pattern) + 41;
+            int end = body.indexOf("\"", start);
+            return body.substring(start, end);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "Cannot get Title";
     }
 
     private String getPageImage(String link, String body) {
-        String pattern = "<meta property=\"og:image\" content=\"";
-        int start = body.indexOf(pattern) + 35;
-        int end = body.indexOf("\"", start);
-        String image = body.substring(start, end);
-        if (!image.startsWith("http") && !image.startsWith("https")) {
-            image = link + image;
+        try {
+            String pattern = "<meta property=\"og:image\" content=\"";
+            int start = body.indexOf(pattern) + 35;
+            int end = body.indexOf("\"", start);
+            String image = body.substring(start, end);
+            if (!image.startsWith("http") && !image.startsWith("https")) {
+                if (link.endsWith("/") || image.startsWith("/")) {
+                    image = link + image;
+                } else {
+                    image = link + "/" + image;
+                }
+            }
+            return image;
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-        return image;
+        return null;
     }
 
     private void runOnUiThread(Runnable run) {
@@ -187,9 +272,15 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     private void sendMessage(int code, Object o) {
-        Message msg = new Message();
+        Message msg = backgroundHandler.obtainMessage();
         msg.what = code;
         msg.obj = o;
+        backgroundHandler.sendMessage(msg);
+    }
+
+    private void sendEmptyMessage(int code) {
+        Message msg = backgroundHandler.obtainMessage();
+        msg.what = code;
         backgroundHandler.sendMessage(msg);
     }
 }

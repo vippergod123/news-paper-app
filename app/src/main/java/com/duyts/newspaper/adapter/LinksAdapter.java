@@ -1,6 +1,7 @@
 package com.duyts.newspaper.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.text.PrecomputedText;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -46,12 +47,18 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
         String url = links.get(position).getUrl();
         String title = links.get(position).getTitle();
         String imageLink = links.get(position).getImage();
-
+        Bitmap imageBitmap = links.get(position).getImageBitMap();
         holder.linkTextView.setText(url);
         holder.titleTextView.setText(title);
 
         if (!TextUtils.isEmpty(imageLink)) {
             Glide.with(context).load(imageLink)
+                    .apply(RequestOptions.centerCropTransform())
+                    .circleCrop()
+                    .into(holder.thumbnailImageView);
+        }
+        else if (imageBitmap != null) {
+            Glide.with(context).load(imageBitmap)
                     .apply(RequestOptions.centerCropTransform())
                     .circleCrop()
                     .into(holder.thumbnailImageView);

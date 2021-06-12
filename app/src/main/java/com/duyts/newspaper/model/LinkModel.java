@@ -1,17 +1,34 @@
 package com.duyts.newspaper.model;
 
-import org.json.JSONObject;
+import android.graphics.Bitmap;
+
+import java.util.UUID;
 
 public class LinkModel {
 
-    String url;
-    String title;
-    String image;
+    private String id;
+    private String url;
+    private String title;
+    private String image;
+    private Bitmap imageBitMap;
 
+    public LinkModel(String url) {
+        this.url = url;
+        id = UUID.randomUUID().toString();
+    }
     public LinkModel(String url, String title, String image) {
         this.url = url;
         this.title = title;
         this.image = image;
+        id = UUID.randomUUID().toString();
+    }
+
+    public LinkModel(String url, String title,String image, Bitmap imageBitMap) {
+        this.url = url;
+        this.title = title;
+        this.image = image;
+        this.imageBitMap = imageBitMap;
+        id = UUID.randomUUID().toString();
     }
 
     public String getUrl() {
@@ -38,4 +55,16 @@ public class LinkModel {
         this.image = image;
     }
 
+    public Bitmap getImageBitMap() {
+        return imageBitMap;
+    }
+
+    public void setImageBitMap(Bitmap imageBitMap) {
+        this.imageBitMap = imageBitMap;
+    }
+
+    public String getId() {
+        return id;
+    }
 }
+
