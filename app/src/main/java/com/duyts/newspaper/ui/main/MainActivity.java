@@ -72,8 +72,8 @@ public class MainActivity extends BaseActivity {
     }
 
     List<String> listUrl = Arrays.asList(
-//            "https://sg.yahoo.com/",
-            "https://www.channelnewsasia.com/",
+//            "https://sg.yahoo.com",
+            "https://www.channelnewsasia.com",
 //            "https://stackoverflow.com/questions/1005073/initialization-of-an-arraylist-in-one-line",
             "https://developer.android.com/topic/libraries/architecture/viewmodel#java"
     );

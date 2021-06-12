@@ -144,7 +144,7 @@ public class MainActivityViewModel extends ViewModel {
             Scanner scanner = new Scanner(response);
             String responseBody = scanner.useDelimiter("\\A").next();
             String pageTitle = getPageTitle(responseBody);
-            String pageImage = getPageImage(responseBody);
+            String pageImage = getPageImage(link, responseBody);
             LinkModel res = new LinkModel(link, pageTitle, pageImage);
 //            sendMessage(res);
             runOnUiThread(() -> {
@@ -165,22 +165,20 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     private String getPageTitle(String body) {
-        return body.substring(body.indexOf("<title>") + 7, body.indexOf("</title>"));
+        String pattern = "<meta property=\"og:description\" content=\"";
+        int start = body.indexOf(pattern) + 41;
+        int end = body.indexOf("\"", start);
+        return body.substring(start, end);
     }
 
-    private String getPageImage(String body) {
-        String image = "";
-//        String imgRegex = "<img[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>";
-//        Pattern pattern = Pattern.compile(imgRegex);
-//        Matcher matcher = pattern.matcher(imgRegex);
-//        if (matcher.find()) {
-//            image = matcher.group(2);
-//        }
-
-        int start = body.indexOf("src=\"") + 5;
+    private String getPageImage(String link, String body) {
+        String pattern = "<meta property=\"og:image\" content=\"";
+        int start = body.indexOf(pattern) + 35;
         int end = body.indexOf("\"", start);
-
-        image = body.substring(start, end);
+        String image = body.substring(start, end);
+        if (!image.startsWith("http") && !image.startsWith("https")) {
+            image = link + image;
+        }
         return image;
     }
 
