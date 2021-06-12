@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.util.Log;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
@@ -173,6 +174,7 @@ public class MainActivityViewModel extends ViewModel {
             @Override
             public void onReceivedIcon(WebView view, Bitmap icon) {
                 super.onReceivedIcon(view, icon);
+                Log.d("CHRIS", "onReceivedIcon HAS IMAGE");
                 res.setImageBitMap(icon);
                 sendMessage(ADD_ITEM_CODE, res);
             }
@@ -180,11 +182,22 @@ public class MainActivityViewModel extends ViewModel {
             @Override
             public void onReceivedTitle(WebView view, String title) {
                 super.onReceivedTitle(view, title);
-                res.setTitle(title);
-                sendMessage(ADD_ITEM_CODE, res);
+//                res.setTitle(title);
+//                sendMessage(ADD_ITEM_CODE, res);
+            }
+
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                super.onProgressChanged(view, newProgress);
+
+                if (newProgress == 100) {
+                    res.setTitle(view.getTitle());
+                    sendMessage(ADD_ITEM_CODE, res);
+                }
             }
         });
         browser.loadUrl(link);
+        
     }
 
 

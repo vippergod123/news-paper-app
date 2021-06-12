@@ -66,6 +66,33 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
     }
 
     @Override
+    public void onViewAttachedToWindow(@NonNull @NotNull LinkViewHolder holder) {
+        super.onViewAttachedToWindow(holder);
+        int position = holder.getAdapterPosition();
+        String imageLink = links.get(position).getImage();
+        Bitmap imageBitmap = links.get(position).getImageBitMap();
+        if (!TextUtils.isEmpty(imageLink)) {
+            Glide.with(context).load(imageLink)
+                    .apply(RequestOptions.centerCropTransform())
+                    .circleCrop()
+                    .into(holder.thumbnailImageView);
+        }
+        else if (imageBitmap != null) {
+            Glide.with(context).load(imageBitmap)
+                    .apply(RequestOptions.centerCropTransform())
+                    .circleCrop()
+                    .into(holder.thumbnailImageView);
+        }
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(@NonNull @NotNull LinkViewHolder holder) {
+        super.onViewDetachedFromWindow(holder);
+        Glide.with(context)
+                .clear(holder.thumbnailImageView);
+    }
+
+    @Override
     public int getItemCount() {
         return links == null ? 0 : links.size();
     }
