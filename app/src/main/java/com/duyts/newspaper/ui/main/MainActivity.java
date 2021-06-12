@@ -2,14 +2,12 @@ package com.duyts.newspaper.ui.main;
 
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toolbar;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.duyts.newspaper.R;
-import com.duyts.newspaper.adapter.LinksAdapter;
 import com.duyts.newspaper.databinding.ActivityMainBinding;
 import com.duyts.newspaper.ui.BaseActivity;
 
@@ -21,20 +19,22 @@ import kotlin.random.Random;
 public class MainActivity extends BaseActivity {
 
     private ActivityMainBinding viewBinding;
-    private LinksAdapter linksAdapter;
     MainActivityViewModel viewModel;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main,menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.action_remove:
-                viewModel.removeLink();
+                viewModel.removeRandom();
+                return true;
+            case R.id.action_remove_all:
+                viewModel.removeAll();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -50,8 +50,8 @@ public class MainActivity extends BaseActivity {
 
         setSupportActionBar(viewBinding.toolbar);
 
-        linksAdapter = new LinksAdapter(this);
-        viewBinding.urlRecyclerView.setAdapter(linksAdapter);
+//        linksAdapter = new LinksAdapter(this, viewModel);
+        viewBinding.urlRecyclerView.setAdapter(viewModel.getAdapter());
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         viewBinding.urlRecyclerView.setLayoutManager(layoutManager);
 
@@ -60,13 +60,14 @@ public class MainActivity extends BaseActivity {
     @Override
     public void initListener() {
         super.initListener();
-
-        viewModel.getLinks().observe(this, links -> {
-            linksAdapter.setLinks(links);
-        });
-
         viewBinding.addFloatingAction.setOnClickListener(v -> {
-            viewModel.addLink(listUrl.get(Random.Default.nextInt(listUrl.size())));
+            new Thread(() -> {
+                for (int i = 0; i < 10000; i++) {
+                    String randomString = listUrl.get(Random.Default.nextInt(listUrl.size()));
+                    viewModel.addLink(randomString);
+                }
+            }).start();
+
         });
     }
 

@@ -1,6 +1,8 @@
 package com.duyts.newspaper.adapter;
 
 import android.content.Context;
+import android.text.PrecomputedText;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,28 +11,27 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SortedList;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.duyts.newspaper.R;
 import com.duyts.newspaper.model.LinkModel;
+import com.duyts.newspaper.ui.main.MainActivityViewModel;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
 public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHolder> {
 
-    private List<LinkModel> links;
     private final Context context;
+    private SortedList<LinkModel> links;
 
     public LinksAdapter(Context context) {
         this.context = context;
     }
 
-    public void setLinks(List<LinkModel> l) {
-        this.links = l;
-        notifyDataSetChanged();
+    public void setLinks(SortedList<LinkModel> links) {
+        this.links = links;
     }
 
     @NonNull
@@ -42,14 +43,19 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
 
     @Override
     public void onBindViewHolder(@NonNull @NotNull LinkViewHolder holder, int position) {
-        holder.linkTextView.setText(links.get(position).getUrl());
-        holder.titleTextView.setText(links.get(position).getTitle());
-
+        String url = links.get(position).getUrl();
+        String title = links.get(position).getTitle();
         String imageLink = links.get(position).getImage();
-        Glide.with(context).load(imageLink)
-                .apply(RequestOptions.centerCropTransform())
-                .circleCrop()
-                .into(holder.thumbnailImageView);
+
+        holder.linkTextView.setText(url);
+        holder.titleTextView.setText(title);
+
+        if (!TextUtils.isEmpty(imageLink)) {
+            Glide.with(context).load(imageLink)
+                    .apply(RequestOptions.centerCropTransform())
+                    .circleCrop()
+                    .into(holder.thumbnailImageView);
+        }
     }
 
     @Override

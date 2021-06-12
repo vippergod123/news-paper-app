@@ -1,5 +1,7 @@
 package com.duyts.newspaper.model;
 
+import org.json.JSONObject;
+
 public class LinkModel {
 
     String url;
@@ -35,4 +37,5 @@ public class LinkModel {
     public void setImage(String image) {
         this.image = image;
     }
+
 }
