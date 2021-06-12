@@ -18,8 +18,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import kotlin.random.Random;
 import timber.log.Timber;
@@ -50,8 +48,7 @@ public class MainActivityViewModel extends ViewModel {
                     runOnUiThread(() -> {
                         sortedLinks.add((LinkModel) msg.obj);
                     });
-                }
-                else if (msg.what == ADD_ITEM_BY_STRING_CODE) {
+                } else if (msg.what == ADD_ITEM_BY_STRING_CODE) {
                     getLinkInfo((String) msg.obj);
                 }
                 return false;
@@ -144,7 +141,7 @@ public class MainActivityViewModel extends ViewModel {
             Scanner scanner = new Scanner(response);
             String responseBody = scanner.useDelimiter("\\A").next();
             String pageTitle = getPageTitle(responseBody);
-            String pageImage = getPageImage(responseBody);
+            String pageImage = getPageImage(link, responseBody);
             LinkModel res = new LinkModel(link, pageTitle, pageImage);
 //            sendMessage(res);
             runOnUiThread(() -> {
@@ -165,23 +162,31 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     private String getPageTitle(String body) {
-        return body.substring(body.indexOf("<title>") + 7, body.indexOf("</title>"));
+        try {
+            String pattern = "<meta property=\"og:description\" content=\"";
+            int start = body.indexOf(pattern) + 41;
+            int end = body.indexOf("\"", start);
+            return body.substring(start, end);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "Cannot get Title";
     }
 
-    private String getPageImage(String body) {
-        String image = "";
-//        String imgRegex = "<img[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>";
-//        Pattern pattern = Pattern.compile(imgRegex);
-//        Matcher matcher = pattern.matcher(imgRegex);
-//        if (matcher.find()) {
-//            image = matcher.group(2);
-//        }
-
-        int start = body.indexOf("src=\"") + 5;
-        int end = body.indexOf("\"", start);
-
-        image = body.substring(start, end);
-        return image;
+    private String getPageImage(String link, String body) {
+        try {
+            String pattern = "<meta property=\"og:image\" content=\"";
+            int start = body.indexOf(pattern) + 35;
+            int end = body.indexOf("\"", start);
+            String image = body.substring(start, end);
+            if (!image.startsWith("http") && !image.startsWith("https")) {
+                image = link + image;
+            }
+            return image;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 
     private void runOnUiThread(Runnable run) {

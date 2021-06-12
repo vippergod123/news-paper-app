@@ -72,9 +72,15 @@ public class MainActivity extends BaseActivity {
     }
 
     List<String> listUrl = Arrays.asList(
-//            "https://sg.yahoo.com/",
-            "https://www.channelnewsasia.com/",
-//            "https://stackoverflow.com/questions/1005073/initialization-of-an-arraylist-in-one-line",
-            "https://developer.android.com/topic/libraries/architecture/viewmodel#java"
+            "https://sg.yahoo.com",
+            "https://www.channelnewsasia.com",
+            "https://www.google.com",
+            "https://hopamchuan.com/",
+            "https://edition.cnn.com/",
+            "https://www.abc.net.au/",
+            "https://howtodoinjava.com/java/string/java-string-startswith-example/#:~:text=Java%20String%20startsWith()%20method,a%20prefix%20of%20the%20String",
+            "https://www.youtube.com/watch?v=XyQvoONPMng&ab_channel=CodinginFlow"
+
     );
+
 }
