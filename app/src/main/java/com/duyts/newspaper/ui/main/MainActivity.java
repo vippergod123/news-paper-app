@@ -1,8 +1,14 @@
 package com.duyts.newspaper.ui.main;
 
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toolbar;
+
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.duyts.newspaper.R;
 import com.duyts.newspaper.adapter.LinksAdapter;
 import com.duyts.newspaper.databinding.ActivityMainBinding;
 import com.duyts.newspaper.ui.BaseActivity;
@@ -19,18 +25,35 @@ public class MainActivity extends BaseActivity {
     MainActivityViewModel viewModel;
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.action_remove:
+                viewModel.removeLink();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     public void initView() {
         super.initView();
         viewBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(viewBinding.getRoot());
         viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        setSupportActionBar(viewBinding.toolbar);
 
         linksAdapter = new LinksAdapter(this);
         viewBinding.urlRecyclerView.setAdapter(linksAdapter);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         viewBinding.urlRecyclerView.setLayoutManager(layoutManager);
-
 
     }
 

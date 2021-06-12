@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import kotlin.random.Random;
 import timber.log.Timber;
 
 public class MainActivityViewModel extends ViewModel implements Handler.Callback {
@@ -85,5 +86,10 @@ public class MainActivityViewModel extends ViewModel implements Handler.Callback
     @Override
     public boolean handleMessage(@NonNull Message msg) {
         return false;
+    }
+
+    public void removeLink() {
+        _links.remove(Random.Default.nextInt(_links.size()));
+        links.setValue(_links);
     }
 }

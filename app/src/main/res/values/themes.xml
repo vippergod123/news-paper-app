@@ -19,6 +19,12 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <style name="Theme.NewsPaper.ActionBar">
+        <item name="colorControlNormal">?attr/colorPrimaryVariant</item>
+        <item name ="android:textColorPrimary">?attr/colorOnPrimary</item>
+        <item name="searchViewStyle">@style/Widget.AppCompat.SearchView.ActionBar</item>
+    </style>
+
     <style name="Theme.NewsPaper.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.NewsPaper.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
