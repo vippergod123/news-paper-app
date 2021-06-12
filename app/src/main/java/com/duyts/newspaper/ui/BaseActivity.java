@@ -1,47 +1,49 @@
 package com.duyts.newspaper.ui;
 
 import android.os.Bundle;
-import android.os.PersistableBundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public abstract class BaseActivity extends AppCompatActivity {
 
-   @Override
-   protected void onCreate(@Nullable @org.jetbrains.annotations.Nullable Bundle savedInstanceState) {
-      super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(@Nullable @org.jetbrains.annotations.Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initFirst();
+        initView();
+        initListener();
+    }
 
-      initFirst();
-      initView();
-   }
-
-   @Override
-   protected void onResume() {
-      super.onResume();
-      initLogic();
-   }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        initLogic();
+    }
 
 
-   @Override
-   protected void onDestroy() {
-      super.onDestroy();
-      cleanUp();
-   }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cleanUp();
+    }
 
-    void initFirst() {
+    public void initFirst() {
 
-   }
+    }
 
-    void initView() {
+    public void initView() {
 
-   }
+    }
 
-    void initLogic() {
+    public void initListener() {
 
-   }
+    }
+    public void initLogic() {
 
-    void cleanUp() {
+    }
 
-   }
+    public void cleanUp() {
+
+    }
 }
