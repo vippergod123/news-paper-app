@@ -1,6 +1,7 @@
 package com.duyts.newspaper.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.text.PrecomputedText;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -61,6 +62,27 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
     @Override
     public int getItemCount() {
         return links == null ? 0 : links.size();
+    }
+
+
+    @Override
+    public void onViewAttachedToWindow(@NonNull @NotNull LinkViewHolder holder) {
+        super.onViewAttachedToWindow(holder);
+        int position = holder.getAdapterPosition();
+        String imageLink = links.get(position).getImage();
+        if (!TextUtils.isEmpty(imageLink)) {
+            Glide.with(context).load(imageLink)
+                    .apply(RequestOptions.centerCropTransform())
+                    .circleCrop()
+                    .into(holder.thumbnailImageView);
+        }
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(@NonNull @NotNull LinkViewHolder holder) {
+        super.onViewDetachedFromWindow(holder);
+        Glide.with(context)
+                .clear(holder.thumbnailImageView);
     }
 
     static class LinkViewHolder extends RecyclerView.ViewHolder {

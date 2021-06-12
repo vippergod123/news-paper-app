@@ -3,6 +3,7 @@ package com.duyts.newspaper.ui.main;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.SortedList;
 import com.duyts.newspaper.MainApplication;
 import com.duyts.newspaper.adapter.LinksAdapter;
 import com.duyts.newspaper.model.LinkModel;
+import com.duyts.newspaper.util.HtmlParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -139,9 +141,14 @@ public class MainActivityViewModel extends ViewModel {
         try {
             response = new URL(link).openStream();
             Scanner scanner = new Scanner(response);
-            String responseBody = scanner.useDelimiter("\\A").next();
-            String pageTitle = getPageTitle(responseBody);
-            String pageImage = getPageImage(link, responseBody);
+            String htmlString = scanner.useDelimiter("\\A").next();
+
+            HtmlParser htmlParser = new HtmlParser(link, htmlString);
+
+            String pageTitle = htmlParser.getTitle();
+            String pageImage = htmlParser.getImage();
+//            String pageImage = getPageImage(link, htmlString);
+            Log.d("CHRIS", String.format("%s - %s",pageTitle,pageImage));
             LinkModel res = new LinkModel(link, pageTitle, pageImage);
 //            sendMessage(res);
             runOnUiThread(() -> {
@@ -163,9 +170,9 @@ public class MainActivityViewModel extends ViewModel {
 
     private String getPageTitle(String body) {
         try {
-            String pattern = "<meta property=\"og:description\" content=\"";
-            int start = body.indexOf(pattern) + 41;
-            int end = body.indexOf("\"", start);
+            String pattern = "<title>";
+            int start = body.indexOf(pattern) + 7;
+            int end = body.indexOf("</title>", start);
             return body.substring(start, end);
         } catch (Exception ex) {
             ex.printStackTrace();
