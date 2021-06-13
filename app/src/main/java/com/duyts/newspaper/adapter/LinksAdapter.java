@@ -1,9 +1,7 @@
 package com.duyts.newspaper.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.text.PrecomputedText;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.ActionMode;
@@ -25,9 +23,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.duyts.newspaper.R;
 import com.duyts.newspaper.model.LinkModel;
-import com.duyts.newspaper.ui.main.MainActivityViewModel;
-import com.duyts.newspaper.util.GlideApp;
-import com.squareup.picasso.Picasso;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +33,7 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
 
 
     private Boolean isSelectedMode = false;
-    private ArrayList<LinkModel> selectedLinks;
+    private final ArrayList<LinkModel> selectedLinks;
     private final Context context;
     private SortedList<LinkModel> links;
     private final Callback cb;
@@ -77,20 +72,28 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                     .into(holder.thumbnailImageView);
         }
 
+        if (selectedLinks.contains(item)) {
+            holder.setSelected(true);
+            holder.itemView.setBackgroundColor(Color.LTGRAY);
+        } else {
+            holder.setSelected(false);
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT);
+        }
+
         holder.itemView.setOnLongClickListener(v -> {
             if (!isSelectedMode) {
                 ActionMode.Callback callback = new ActionMode.Callback() {
                     @Override
                     public boolean onCreateActionMode(ActionMode mode, Menu menu) {
                         MenuInflater menuInflater = mode.getMenuInflater();
-                        menuInflater.inflate(R.menu.is_selected_menu_main,menu);
+                        menuInflater.inflate(R.menu.is_selected_menu_main, menu);
                         return true;
                     }
 
                     @Override
                     public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
                         isSelectedMode = true;
-                        selectedItem(holder,item);
+                        selectedItem(holder, item);
                         return true;
                     }
 
@@ -116,20 +119,18 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                         notifyDataSetChanged();
                     }
                 };
-                ((AppCompatActivity)v.getContext()).startActionMode(callback);
+                ((AppCompatActivity) v.getContext()).startActionMode(callback);
                 return true;
-            }
-            else {
-                selectedItem(holder,item);
+            } else {
+                selectedItem(holder, item);
             }
             return false;
         });
 
         holder.itemView.setOnClickListener(v -> {
             if (isSelectedMode) {
-                selectedItem(holder,item);
-            }
-            else {
+                selectedItem(holder, item);
+            } else {
                 Log.d("CHRIS", "ITEM: " + item.getTitle());
             }
         });
@@ -174,12 +175,12 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
             v.setSelected(true);
             v.itemView.setBackgroundColor(Color.LTGRAY);
             selectedLinks.add(item);
-        }
-        else {
+        } else {
             v.setSelected(false);
             v.itemView.setBackgroundColor(Color.TRANSPARENT);
             selectedLinks.remove(item);
         }
+
     }
 
     static class LinkViewHolder extends RecyclerView.ViewHolder {
@@ -200,13 +201,18 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
 
         public void setSelected(boolean isSelected) {
             this.isSelected = true;
-            isSelectedImageView.setVisibility(isSelected?View.VISIBLE :View.GONE);
+            isSelectedImageView.setVisibility(isSelected ? View.VISIBLE : View.GONE);
         }
     }
 
     public interface Callback {
-        default void onRemoveSelectedList(List<LinkModel> selectedLinks){}
-        default void onRemoveAllList(){}
-        default void onChangeSelectedMode(boolean isSelectedMode){}
+        default void onRemoveSelectedList(ArrayList<LinkModel> selectedLinks) {
+        }
+
+        default void onRemoveAllList() {
+        }
+
+        default void onChangeSelectedMode(boolean isSelectedMode) {
+        }
     }
 }

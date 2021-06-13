@@ -1,10 +1,9 @@
 package com.duyts.newspaper.ui.main;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.util.Log;
-import android.view.Menu;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -24,15 +23,17 @@ import java.util.List;
 import java.util.Scanner;
 
 import kotlin.random.Random;
-import timber.log.Timber;
 
 public class MainActivityViewModel extends ViewModel implements LinksAdapter.Callback,
         Handler.Callback {
 
+    private static final int ADD_ITEM_LINKS_BY_STRING_CODE = 10001;
     private static final int ADD_ITEM_BY_STRING_CODE = 10002;
     private static final int REMOVE_RANDOM_CODE = 10003;
     private static final int REMOVE_ALL_CODE = 10004;
     private static final int REMOVE_ITEM_CODE = 10005;
+    private static final int REMOVE_LIST_ITEM_CODE = 10006;
+    private static final int SORT_LIST_CODE = 10007;
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
@@ -43,12 +44,12 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     private final HandlerThread handlerThread;
     private final Handler backgroundHandler;
 
+    private Boolean isAscendingList = true;
+
     @Override
-    public void onRemoveSelectedList(List<LinkModel> selectedLinks) {
+    public void onRemoveSelectedList(ArrayList<LinkModel> selectedLinks) {
         if (selectedLinks.size() != 0) {
-            for (LinkModel item : selectedLinks) {
-                removeItem(item);
-            }
+            removeItems(selectedLinks);
         }
     }
 
@@ -59,7 +60,16 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
 
     @Override
     public boolean handleMessage(@NonNull Message msg) {
+        Bundle bundle = msg.getData();
         switch (msg.what) {
+            case ADD_ITEM_LINKS_BY_STRING_CODE:
+                sortedLinks.beginBatchedUpdates();
+                getLinksListInfo(bundle.getStringArrayList("add_links_list"));
+                sortedLinks.endBatchedUpdates();
+                runOnUiThread(() -> {
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                });
+                break;
             case ADD_ITEM_BY_STRING_CODE:
                 getLinkInfo((String) msg.obj);
                 break;
@@ -83,6 +93,36 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                     sortedLinksMutableLiveData.setValue(sortedLinks);
                 });
                 break;
+            case REMOVE_LIST_ITEM_CODE:
+//                sortedLinks.beginBatchedUpdates();
+
+                ArrayList<LinkModel> removeLinks =
+                        bundle.getParcelableArrayList("remove_list_item");
+                for (int i = 0; i < removeLinks.size(); ++i) {
+                    sortedLinks.remove(removeLinks.get(i));
+                }
+//                sortedLinks.endBatchedUpdates();
+                runOnUiThread(() -> {
+                    adapter.notifyItemRangeChanged(0, adapter.getItemCount());
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                    removeLinks.clear();
+                });
+                break;
+            case SORT_LIST_CODE:
+                sortedLinks.beginBatchedUpdates();
+                List<LinkModel> tempArray = new ArrayList<>();
+                for (int i = 0; i < sortedLinks.size(); ++i) {
+                    tempArray.add(sortedLinks.get(i));
+                }
+
+                sortedLinks.clear();
+
+                runOnUiThread(() -> {
+                    sortedLinks.addAll(tempArray);
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                    sortedLinks.endBatchedUpdates();
+                });
+                break;
         }
         return false;
     }
@@ -102,14 +142,14 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                     public void onInserted(int position, int count) {
 
                         runOnUiThread(() -> {
-                            adapter.notifyItemRangeInserted(position,count);
+                            adapter.notifyItemRangeInserted(position, count);
                         });
                     }
 
                     @Override
                     public void onRemoved(int position, int count) {
                         runOnUiThread(() -> {
-                            adapter.notifyItemRangeRemoved(position,count);
+                            adapter.notifyItemRangeRemoved(position, count);
                         });
 
                     }
@@ -124,7 +164,10 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
 
                     @Override
                     public int compare(LinkModel o1, LinkModel o2) {
-                        return o1.getTitle().compareTo(o2.getTitle());
+                        if (isAscendingList) {
+                            return o1.getTitle().compareTo(o2.getTitle());
+                        }
+                        return o2.getTitle().compareTo(o1.getTitle());
                     }
 
                     @Override
@@ -152,7 +195,6 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         sortedLinksMutableLiveData.setValue(sortedLinks);
     }
 
-
     public LinksAdapter getAdapter() {
         return adapter;
     }
@@ -161,8 +203,24 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         sendMessage(ADD_ITEM_BY_STRING_CODE, link);
     }
 
+    public void addLinksList(final ArrayList<String> linksList) {
+        Bundle bundle = new Bundle();
+        final ArrayList<String> newArrayList = new ArrayList<>(linksList);
+        bundle.putStringArrayList("add_links_list", newArrayList);
+        sendMessageWithBundle(ADD_ITEM_LINKS_BY_STRING_CODE, bundle);
+    }
+
     public void removeItem(LinkModel item) {
-        sendMessage(REMOVE_ITEM_CODE, item);
+        ArrayList<LinkModel> list = new ArrayList<>();
+        list.add(item);
+        removeItems(list);
+    }
+
+    public synchronized void removeItems(final ArrayList<LinkModel> items) {
+        Bundle bundle = new Bundle();
+        final ArrayList<LinkModel> newArrayList = new ArrayList<>(items);
+        bundle.putParcelableArrayList("remove_list_item", newArrayList);
+        sendMessageWithBundle(REMOVE_LIST_ITEM_CODE, bundle);
     }
 
     public void removeRandom() {
@@ -177,34 +235,41 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         });
     }
 
+    public synchronized void sortList() {
+        isAscendingList = !isAscendingList;
+        sendEmptyMessage(SORT_LIST_CODE);
+    }
+
+    private void getLinksListInfo(ArrayList<String> linksList) {
+        for (String link:linksList) {
+            getLinkInfo(link);
+        }
+    }
+
     private void getLinkInfo(String link) {
-        InputStream response = null;
-        try {
-            response = new URL(link).openStream();
-            Scanner scanner = new Scanner(response);
-            String htmlString = scanner.useDelimiter("\\A").next();
-
-            HtmlParser htmlParser = new HtmlParser(link, htmlString);
-
-            String pageTitle = htmlParser.getTitle();
-            String pageImage = htmlParser.getImage();
-            LinkModel itemAdd = new LinkModel(link, pageTitle, pageImage);
-            runOnUiThread(() -> {
-                Timber.e("Add ITEM: %s", itemAdd.getTitle());
-                sortedLinks.add(itemAdd);
-                sortedLinksMutableLiveData.setValue(sortedLinks);
-            });
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
+            InputStream response = null;
             try {
-                if (response != null) {
-                    response.close();
-                }
+                response = new URL(link).openStream();
+                Scanner scanner = new Scanner(response);
+                String htmlString = scanner.useDelimiter("\\A").next();
+
+                HtmlParser htmlParser = new HtmlParser(link, htmlString);
+
+                String pageTitle = htmlParser.getTitle();
+                String pageImage = htmlParser.getImage();
+                LinkModel itemAdd = new LinkModel(link, pageTitle, pageImage);
+                sortedLinks.add(itemAdd);
             } catch (IOException ex) {
                 ex.printStackTrace();
+            } finally {
+                try {
+                    if (response != null) {
+                        response.close();
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
-        }
     }
 
     private void runOnUiThread(Runnable run) {
@@ -212,14 +277,21 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     }
 
     private void sendMessage(int code, Object o) {
-        Message msg = new Message();
+        Message msg = backgroundHandler.obtainMessage();
         msg.what = code;
         msg.obj = o;
         backgroundHandler.sendMessage(msg);
     }
 
+    private void sendMessageWithBundle(int code, Bundle b) {
+        Message msg = Message.obtain();
+        msg.what = code;
+        msg.setData(b);
+        backgroundHandler.sendMessage(msg);
+    }
+
     private void sendEmptyMessage(int code) {
-        Message msg = new Message();
+        Message msg = backgroundHandler.obtainMessage();
         msg.what = code;
         backgroundHandler.sendMessage(msg);
     }
