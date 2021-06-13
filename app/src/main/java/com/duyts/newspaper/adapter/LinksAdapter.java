@@ -77,6 +77,15 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                     .into(holder.thumbnailImageView);
         }
 
+        if (selectedLinks.contains(item)) {
+            holder.setSelected(true);
+            holder.itemView.setBackgroundColor(Color.LTGRAY);
+        }
+        else {
+            holder.setSelected(false);
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT);
+        }
+
         holder.itemView.setOnLongClickListener(v -> {
             if (!isSelectedMode) {
                 ActionMode.Callback callback = new ActionMode.Callback() {
@@ -180,6 +189,7 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
             v.itemView.setBackgroundColor(Color.TRANSPARENT);
             selectedLinks.remove(item);
         }
+
     }
 
     static class LinkViewHolder extends RecyclerView.ViewHolder {

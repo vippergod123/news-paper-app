@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -33,6 +35,7 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     private static final int REMOVE_RANDOM_CODE = 10003;
     private static final int REMOVE_ALL_CODE = 10004;
     private static final int REMOVE_ITEM_CODE = 10005;
+    private static final int SORT_LIST_CODE = 10006;
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
@@ -42,6 +45,8 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
 
     private final HandlerThread handlerThread;
     private final Handler backgroundHandler;
+
+    private Boolean isAscendingList = true;
 
     @Override
     public void onRemoveSelectedList(List<LinkModel> selectedLinks) {
@@ -81,6 +86,22 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                 runOnUiThread(() -> {
                     sortedLinks.remove(itemRemove);
                     sortedLinksMutableLiveData.setValue(sortedLinks);
+                });
+                break;
+
+            case SORT_LIST_CODE:
+                sortedLinks.beginBatchedUpdates();
+                List<LinkModel> tempArray = new ArrayList<>();
+                for(int i = 0; i < sortedLinks.size(); ++i) {
+                    tempArray.add(sortedLinks.get(i));
+                }
+
+                sortedLinks.clear();
+
+                runOnUiThread(() -> {
+                    sortedLinks.addAll(tempArray);
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                    sortedLinks.endBatchedUpdates();
                 });
                 break;
         }
@@ -124,7 +145,10 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
 
                     @Override
                     public int compare(LinkModel o1, LinkModel o2) {
-                        return o1.getTitle().compareTo(o2.getTitle());
+                        if (isAscendingList) {
+                            return o1.getTitle().compareTo(o2.getTitle());
+                        }
+                        return o2.getTitle().compareTo(o1.getTitle());
                     }
 
                     @Override
@@ -175,6 +199,11 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
             sortedLinks.clear();
             sortedLinksMutableLiveData.setValue(sortedLinks);
         });
+    }
+
+    public synchronized void sortList() {
+        isAscendingList = !isAscendingList;
+        sendEmptyMessage(SORT_LIST_CODE);
     }
 
     private void getLinkInfo(String link) {

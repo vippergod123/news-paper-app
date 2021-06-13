@@ -1,8 +1,13 @@
 package com.duyts.newspaper.ui.main;
 
+import android.support.annotation.NonNull;
+import android.view.Menu;
+import android.view.MenuItem;
+
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.duyts.newspaper.R;
 import com.duyts.newspaper.databinding.ActivityMainBinding;
 import com.duyts.newspaper.ui.BaseActivity;
 import com.duyts.newspaper.ui.component.EditTextDialog;
@@ -16,6 +21,22 @@ public class MainActivity extends BaseActivity implements EditTextDialog.Callbac
 
     private ActivityMainBinding viewBinding;
     MainActivityViewModel viewModel;
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_sort_list) {
+            viewModel.sortList();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
     @Override
     public void initView() {
