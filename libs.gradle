@@ -19,7 +19,7 @@ ext {
 
     common = [
             timber: "com.jakewharton.timber:timber:4.7.0",
-            glide: "com.github.bumptech.glide:glide:4.11.0",
+            glide: "com.github.bumptech.glide:glide:4.8.0",
     ]
     network = [
             okhttp: "com.squareup.okhttp3:okhttp:4.2.1",

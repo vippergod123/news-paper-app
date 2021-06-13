@@ -2,15 +2,22 @@ package com.duyts.newspaper.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.text.PrecomputedText;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SortedList;
 
@@ -19,16 +26,26 @@ import com.bumptech.glide.request.RequestOptions;
 import com.duyts.newspaper.R;
 import com.duyts.newspaper.model.LinkModel;
 import com.duyts.newspaper.ui.main.MainActivityViewModel;
+import com.duyts.newspaper.util.GlideApp;
+import com.squareup.picasso.Picasso;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHolder> {
 
+
+    private Boolean isSelectedMode = false;
+    private ArrayList<LinkModel> selectedLinks;
     private final Context context;
     private SortedList<LinkModel> links;
-
-    public LinksAdapter(Context context) {
+    private final Callback cb;
+    public LinksAdapter(Context context, Callback cb) {
         this.context = context;
+        this.selectedLinks = new ArrayList<>();
+        this.cb = cb;
     }
 
     public void setLinks(SortedList<LinkModel> links) {
@@ -44,9 +61,10 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
 
     @Override
     public void onBindViewHolder(@NonNull @NotNull LinkViewHolder holder, int position) {
-        String url = links.get(position).getUrl();
-        String title = links.get(position).getTitle();
-        String imageLink = links.get(position).getImage();
+        LinkModel item = links.get(holder.getAdapterPosition());
+        String url = item.getUrl();
+        String title = item.getTitle();
+        String imageLink = item.getImage();
 
         holder.linkTextView.setText(url);
         holder.titleTextView.setText(title);
@@ -57,6 +75,61 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                     .circleCrop()
                     .into(holder.thumbnailImageView);
         }
+        holder.itemView.setOnLongClickListener(v -> {
+            if (!isSelectedMode) {
+                ActionMode.Callback callback = new ActionMode.Callback() {
+                    @Override
+                    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                        MenuInflater menuInflater = mode.getMenuInflater();
+                        menuInflater.inflate(R.menu.menu_main,menu);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                        isSelectedMode = true;
+                        selectedItem(holder,item);
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                        switch (item.getItemId()) {
+                            case R.id.action_remove:
+                                cb.onRemoveSelectedList(selectedLinks);
+                                notifyDataSetChanged();
+                                mode.finish();
+                                break;
+                            case R.id.action_remove_all:
+                                break;
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    public void onDestroyActionMode(ActionMode mode) {
+                        isSelectedMode = false;
+                        selectedLinks.clear();
+                        notifyDataSetChanged();
+                    }
+                };
+                ((AppCompatActivity)v.getContext()).startActionMode(callback);
+                return true;
+            }
+            else {
+                selectedItem(holder,item);
+            }
+            return false;
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            if (isSelectedMode) {
+                selectedItem(holder,item);
+            }
+            else {
+                Log.d("CHRIS", "ITEM: " + item.getTitle());
+            }
+        });
     }
 
     @Override
@@ -68,14 +141,17 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
     @Override
     public void onViewAttachedToWindow(@NonNull @NotNull LinkViewHolder holder) {
         super.onViewAttachedToWindow(holder);
-        int position = holder.getAdapterPosition();
-        String imageLink = links.get(position).getImage();
+        LinkModel item = links.get(holder.getAdapterPosition());
+        String imageLink = item.getImage();
+
         if (!TextUtils.isEmpty(imageLink)) {
             Glide.with(context).load(imageLink)
                     .apply(RequestOptions.centerCropTransform())
                     .circleCrop()
                     .into(holder.thumbnailImageView);
         }
+
+
     }
 
     @Override
@@ -83,18 +159,42 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
         super.onViewDetachedFromWindow(holder);
         Glide.with(context)
                 .clear(holder.thumbnailImageView);
+
+//        holder.itemView.setOnLongClickListener(null);
+//        holder.itemView.setOnClickListener(null);
+    }
+
+
+    private void selectedItem(LinkViewHolder v, LinkModel item) {
+        ImageView isSelectedImageView = v.isSelectedImageView;
+        if (isSelectedImageView.getVisibility() == View.GONE) {
+            isSelectedImageView.setVisibility(View.VISIBLE);
+            v.itemView.setBackgroundColor(Color.LTGRAY);
+            selectedLinks.add(item);
+        }
+        else {
+            isSelectedImageView.setVisibility(View.GONE);
+            v.itemView.setBackgroundColor(Color.TRANSPARENT);
+            selectedLinks.remove(item);
+        }
     }
 
     static class LinkViewHolder extends RecyclerView.ViewHolder {
         TextView linkTextView;
         TextView titleTextView;
         ImageView thumbnailImageView;
+        ImageView isSelectedImageView;
 
         public LinkViewHolder(@NonNull @NotNull View itemView) {
             super(itemView);
             linkTextView = itemView.findViewById(R.id.linkTextView);
             titleTextView = itemView.findViewById(R.id.titleTextView);
             thumbnailImageView = itemView.findViewById(R.id.thumbnailImageView);
+            isSelectedImageView = itemView.findViewById(R.id.isSelectedImageView);
         }
+    }
+
+    public interface Callback {
+        default void onRemoveSelectedList(List<LinkModel> selectedLinks){}
     }
 }

@@ -30,7 +30,7 @@ public class MainActivity extends BaseActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_remove:
+            case R.id.action_remove_random:
                 viewModel.removeRandom();
                 return true;
             case R.id.action_remove_all:
@@ -62,7 +62,7 @@ public class MainActivity extends BaseActivity {
         super.initListener();
         viewBinding.addFloatingAction.setOnClickListener(v -> {
             new Thread(() -> {
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 20; i++) {
                     String randomString = listUrl.get(Random.Default.nextInt(listUrl.size()));
                     viewModel.addLink(randomString);
                 }

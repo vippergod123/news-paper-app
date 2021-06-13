@@ -19,17 +19,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import kotlin.random.Random;
 import timber.log.Timber;
 
-public class MainActivityViewModel extends ViewModel {
+public class MainActivityViewModel extends ViewModel implements LinksAdapter.Callback,
+        Handler.Callback {
 
-    private static final int ADD_ITEM_CODE = 10001;
     private static final int ADD_ITEM_BY_STRING_CODE = 10002;
     private static final int REMOVE_RANDOM_CODE = 10003;
     private static final int REMOVE_ALL_CODE = 10004;
+    private static final int REMOVE_ITEM_CODE = 10005;
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
@@ -40,40 +42,51 @@ public class MainActivityViewModel extends ViewModel {
     private final HandlerThread handlerThread;
     private final Handler backgroundHandler;
 
+    @Override
+    public void onRemoveSelectedList(List<LinkModel> selectedLinks) {
+        if (selectedLinks.size() != 0) {
+            for (LinkModel item : selectedLinks) {
+                removeItem(item);
+            }
+        }
+    }
+
+    @Override
+    public boolean handleMessage(@NonNull Message msg) {
+        switch (msg.what) {
+            case ADD_ITEM_BY_STRING_CODE:
+                getLinkInfo((String) msg.obj);
+                break;
+            case REMOVE_ALL_CODE:
+                runOnUiThread(() -> {
+                    sortedLinks.clear();
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                });
+                break;
+            case REMOVE_RANDOM_CODE:
+                runOnUiThread(() -> {
+                    int random = Random.Default.nextInt(sortedLinks.size());
+                    sortedLinks.removeItemAt(random);
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                });
+                break;
+            case REMOVE_ITEM_CODE:
+                LinkModel itemRemove = (LinkModel) msg.obj;
+                runOnUiThread(() -> {
+                    sortedLinks.remove(itemRemove);
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                });
+                break;
+        }
+        return false;
+    }
+
     public MainActivityViewModel() {
 //        executorService = Executors.newFixedThreadPool(50);
 
         handlerThread = new HandlerThread(MainActivityViewModel.class.getSimpleName());
         handlerThread.start();
-        backgroundHandler = new Handler(handlerThread.getLooper(), new Handler.Callback() {
-            @Override
-            public boolean handleMessage(@NonNull Message msg) {
-                switch (msg.what) {
-                    case ADD_ITEM_CODE:
-                        runOnUiThread(() -> {
-                            sortedLinks.add((LinkModel) msg.obj);
-                        });
-                        break;
-                    case ADD_ITEM_BY_STRING_CODE:
-                        getLinkInfo((String) msg.obj);
-                        break;
-                    case REMOVE_ALL_CODE:
-                        runOnUiThread(() -> {
-                            sortedLinks.clear();
-                            sortedLinksMutableLiveData.setValue(sortedLinks);
-                        });
-                        break;
-                    case REMOVE_RANDOM_CODE:
-                        runOnUiThread(() -> {
-                            int random = Random.Default.nextInt(sortedLinks.size());
-                            sortedLinks.removeItemAt(random);
-                            sortedLinksMutableLiveData.setValue(sortedLinks);
-                        });
-                        break;
-                }
-                return false;
-            }
-        });
+        backgroundHandler = new Handler(handlerThread.getLooper(), this);
         handler = new Handler();
         sortedLinks = new SortedList<>(
                 LinkModel.class,
@@ -81,17 +94,26 @@ public class MainActivityViewModel extends ViewModel {
 
                     @Override
                     public void onInserted(int position, int count) {
-                        runOnUiThread(() -> adapter.notifyItemRangeInserted(position, count));
+
+                        runOnUiThread(() -> {
+                            adapter.notifyItemRangeInserted(position,count);
+                        });
                     }
 
                     @Override
                     public void onRemoved(int position, int count) {
-                        runOnUiThread(() -> adapter.notifyItemRangeRemoved(position, count));
+                        runOnUiThread(() -> {
+                            adapter.notifyItemRemoved(position);
+                        });
+
                     }
 
                     @Override
                     public void onMoved(int fromPosition, int toPosition) {
-                        runOnUiThread(() -> adapter.notifyItemMoved(fromPosition, toPosition));
+                        runOnUiThread(() -> {
+                            adapter.notifyItemMoved(fromPosition, toPosition);
+                        });
+
                     }
 
                     @Override
@@ -101,7 +123,10 @@ public class MainActivityViewModel extends ViewModel {
 
                     @Override
                     public void onChanged(int position, int count) {
-                        runOnUiThread(() -> adapter.notifyItemRangeChanged(position, count));
+                        runOnUiThread(() -> {
+                            adapter.notifyItemRangeChanged(position, count);
+                        });
+
                     }
 
                     @Override
@@ -116,7 +141,7 @@ public class MainActivityViewModel extends ViewModel {
                 }
         );
 
-        adapter = new LinksAdapter(MainApplication.getAppContext());
+        adapter = new LinksAdapter(MainApplication.getAppContext(), this);
         adapter.setLinks(sortedLinks);
         sortedLinksMutableLiveData.setValue(sortedLinks);
     }
@@ -126,17 +151,12 @@ public class MainActivityViewModel extends ViewModel {
         return adapter;
     }
 
-    public void setLinks(ArrayList<LinkModel> l) {
-    }
-
     public void addLink(String link) {
-        Timber.w(link);
         sendMessage(ADD_ITEM_BY_STRING_CODE, link);
     }
 
-    public void removeLinkAt(int pos) {
-        sortedLinks.removeItemAt(pos);
-        sortedLinksMutableLiveData.setValue(sortedLinks);
+    public void removeItem(LinkModel item) {
+        sendMessage(REMOVE_ITEM_CODE, item);
     }
 
     public void removeRandom() {
@@ -159,12 +179,10 @@ public class MainActivityViewModel extends ViewModel {
 
             String pageTitle = htmlParser.getTitle();
             String pageImage = htmlParser.getImage();
-//            String pageImage = getPageImage(link, htmlString);
-            Log.d("CHRIS", String.format("%s - %s",pageTitle,pageImage));
-            LinkModel res = new LinkModel(link, pageTitle, pageImage);
-//            sendMessage(res);
+            LinkModel itemAdd = new LinkModel(link, pageTitle, pageImage);
             runOnUiThread(() -> {
-                sortedLinks.add(res);
+                Timber.e("Add ITEM: %s", itemAdd.getTitle());
+                sortedLinks.add(itemAdd);
                 sortedLinksMutableLiveData.setValue(sortedLinks);
             });
         } catch (IOException ex) {
@@ -178,34 +196,6 @@ public class MainActivityViewModel extends ViewModel {
                 ex.printStackTrace();
             }
         }
-    }
-
-    private String getPageTitle(String body) {
-        try {
-            String pattern = "<title>";
-            int start = body.indexOf(pattern) + 7;
-            int end = body.indexOf("</title>", start);
-            return body.substring(start, end);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return "Cannot get Title";
-    }
-
-    private String getPageImage(String link, String body) {
-        try {
-            String pattern = "<meta property=\"og:image\" content=\"";
-            int start = body.indexOf(pattern) + 35;
-            int end = body.indexOf("\"", start);
-            String image = body.substring(start, end);
-            if (!image.startsWith("http") && !image.startsWith("https")) {
-                image = link + image;
-            }
-            return image;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return null;
     }
 
     private void runOnUiThread(Runnable run) {

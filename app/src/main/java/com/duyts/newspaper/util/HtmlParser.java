@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import timber.log.Timber;
+
 public class HtmlParser {
     String head;
     List<String> metaTags;
@@ -28,13 +30,15 @@ public class HtmlParser {
     }
 
     private String getTitleInternal() {
-        try {
-            String pattern = "<title>";
-            int start = head.indexOf(pattern) + 7;
-            int end = head.indexOf("</title>", start);
-            return head.substring(start, end);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (head != null) {
+            try {
+                String pattern = "<title>";
+                int start = head.indexOf(pattern) + 7;
+                int end = head.indexOf("</title>", start);
+                return head.substring(start, end);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
         return "Cannot get Title";
     }
@@ -43,7 +47,12 @@ public class HtmlParser {
         try {
             String pattern = "<head>";
             int start = html.indexOf(pattern) + 6;
+
             int end = html.indexOf("</head>", start);
+            if (start < 0 || end < 0){
+                return null;
+            }
+
             return html.substring(start, end);
         } catch (Exception ex) {
             ex.printStackTrace();
