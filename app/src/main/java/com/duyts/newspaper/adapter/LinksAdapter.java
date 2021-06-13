@@ -42,6 +42,7 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
     private final Context context;
     private SortedList<LinkModel> links;
     private final Callback cb;
+
     public LinksAdapter(Context context, Callback cb) {
         this.context = context;
         this.selectedLinks = new ArrayList<>();
@@ -75,13 +76,14 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                     .circleCrop()
                     .into(holder.thumbnailImageView);
         }
+
         holder.itemView.setOnLongClickListener(v -> {
             if (!isSelectedMode) {
                 ActionMode.Callback callback = new ActionMode.Callback() {
                     @Override
                     public boolean onCreateActionMode(ActionMode mode, Menu menu) {
                         MenuInflater menuInflater = mode.getMenuInflater();
-                        menuInflater.inflate(R.menu.menu_main,menu);
+                        menuInflater.inflate(R.menu.is_selected_menu_main,menu);
                         return true;
                     }
 
@@ -89,7 +91,7 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                     public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
                         isSelectedMode = true;
                         selectedItem(holder,item);
-                        return false;
+                        return true;
                     }
 
                     @Override
@@ -97,10 +99,11 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
                         switch (item.getItemId()) {
                             case R.id.action_remove:
                                 cb.onRemoveSelectedList(selectedLinks);
-                                notifyDataSetChanged();
                                 mode.finish();
                                 break;
                             case R.id.action_remove_all:
+                                cb.onRemoveAllList();
+                                mode.finish();
                                 break;
                         }
                         return true;
@@ -168,12 +171,12 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
     private void selectedItem(LinkViewHolder v, LinkModel item) {
         ImageView isSelectedImageView = v.isSelectedImageView;
         if (isSelectedImageView.getVisibility() == View.GONE) {
-            isSelectedImageView.setVisibility(View.VISIBLE);
+            v.setSelected(true);
             v.itemView.setBackgroundColor(Color.LTGRAY);
             selectedLinks.add(item);
         }
         else {
-            isSelectedImageView.setVisibility(View.GONE);
+            v.setSelected(false);
             v.itemView.setBackgroundColor(Color.TRANSPARENT);
             selectedLinks.remove(item);
         }
@@ -184,6 +187,7 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
         TextView titleTextView;
         ImageView thumbnailImageView;
         ImageView isSelectedImageView;
+        boolean isSelected;
 
         public LinkViewHolder(@NonNull @NotNull View itemView) {
             super(itemView);
@@ -191,10 +195,18 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
             titleTextView = itemView.findViewById(R.id.titleTextView);
             thumbnailImageView = itemView.findViewById(R.id.thumbnailImageView);
             isSelectedImageView = itemView.findViewById(R.id.isSelectedImageView);
+            isSelected = false;
+        }
+
+        public void setSelected(boolean isSelected) {
+            this.isSelected = true;
+            isSelectedImageView.setVisibility(isSelected?View.VISIBLE :View.GONE);
         }
     }
 
     public interface Callback {
         default void onRemoveSelectedList(List<LinkModel> selectedLinks){}
+        default void onRemoveAllList(){}
+        default void onChangeSelectedMode(boolean isSelectedMode){}
     }
 }

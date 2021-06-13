@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
+import android.view.Menu;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -49,6 +50,11 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                 removeItem(item);
             }
         }
+    }
+
+    @Override
+    public void onRemoveAllList() {
+        removeAll();
     }
 
     @Override
@@ -103,7 +109,7 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                     @Override
                     public void onRemoved(int position, int count) {
                         runOnUiThread(() -> {
-                            adapter.notifyItemRemoved(position);
+                            adapter.notifyItemRangeRemoved(position,count);
                         });
 
                     }
@@ -164,9 +170,12 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     }
 
     public void removeAll() {
-        sendEmptyMessage(REMOVE_ALL_CODE);
+        backgroundHandler.removeCallbacksAndMessages(null);
+        runOnUiThread(() -> {
+            sortedLinks.clear();
+            sortedLinksMutableLiveData.setValue(sortedLinks);
+        });
     }
-
 
     private void getLinkInfo(String link) {
         InputStream response = null;
@@ -214,4 +223,5 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         msg.what = code;
         backgroundHandler.sendMessage(msg);
     }
+
 }

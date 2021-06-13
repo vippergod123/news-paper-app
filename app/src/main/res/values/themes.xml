@@ -19,6 +19,11 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <style name="EditText.Dialog" parent="Theme.NewsPaper" >
+        <item name="windowMinWidthMajor">60%</item>
+        <item name="windowMinWidthMinor">40%</item>
+    </style>
+
     <style name="Theme.NewsPaper.ActionBar">
         <item name="colorControlNormal">?attr/colorPrimaryVariant</item>
         <item name ="android:textColorPrimary">?attr/colorOnPrimary</item>
