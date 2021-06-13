@@ -3,8 +3,6 @@ package com.duyts.newspaper.ui.main;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.util.Log;
-import android.view.Menu;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -21,7 +19,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -35,10 +32,12 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     private static final int REMOVE_RANDOM_CODE = 10003;
     private static final int REMOVE_ALL_CODE = 10004;
     private static final int REMOVE_ITEM_CODE = 10005;
-    private static final int SORT_LIST_CODE = 10006;
+    private static final int REMOVE_LIST_ITEM_CODE = 10006;
+    private static final int SORT_LIST_CODE = 10007;
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
+    private List<LinkModel> removeLinks;
     private final Handler handler;
     private final LinksAdapter adapter;
 //    private final ExecutorService executorService;
@@ -88,11 +87,21 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                     sortedLinksMutableLiveData.setValue(sortedLinks);
                 });
                 break;
-
+            case REMOVE_LIST_ITEM_CODE:
+                sortedLinks.beginBatchedUpdates();
+                for (int i = 0; i < removeLinks.size(); ++i) {
+                    sortedLinks.remove(removeLinks.get(i));
+                }
+                sortedLinks.endBatchedUpdates();
+                runOnUiThread(() -> {
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                    removeLinks.clear();
+                });
+                break;
             case SORT_LIST_CODE:
                 sortedLinks.beginBatchedUpdates();
                 List<LinkModel> tempArray = new ArrayList<>();
-                for(int i = 0; i < sortedLinks.size(); ++i) {
+                for (int i = 0; i < sortedLinks.size(); ++i) {
                     tempArray.add(sortedLinks.get(i));
                 }
 
@@ -123,14 +132,14 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                     public void onInserted(int position, int count) {
 
                         runOnUiThread(() -> {
-                            adapter.notifyItemRangeInserted(position,count);
+                            adapter.notifyItemRangeInserted(position, count);
                         });
                     }
 
                     @Override
                     public void onRemoved(int position, int count) {
                         runOnUiThread(() -> {
-                            adapter.notifyItemRangeRemoved(position,count);
+                            adapter.notifyItemRangeRemoved(position, count);
                         });
 
                     }
@@ -176,7 +185,6 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         sortedLinksMutableLiveData.setValue(sortedLinks);
     }
 
-
     public LinksAdapter getAdapter() {
         return adapter;
     }
@@ -186,7 +194,12 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     }
 
     public void removeItem(LinkModel item) {
-        sendMessage(REMOVE_ITEM_CODE, item);
+        removeItems(Collections.singletonList(item));
+    }
+
+    public synchronized void removeItems(List<LinkModel> items) {
+        removeLinks = items;
+        sendEmptyMessage(REMOVE_LIST_ITEM_CODE);
     }
 
     public void removeRandom() {
