@@ -1,5 +1,6 @@
 package com.duyts.newspaper.ui.main;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
@@ -37,7 +39,6 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     private final MutableLiveData<SortedList<LinkModel>> sortedLinksMutableLiveData =
             new MutableLiveData<>();
     private final SortedList<LinkModel> sortedLinks;
-    private List<LinkModel> removeLinks;
     private final Handler handler;
     private final LinksAdapter adapter;
 //    private final ExecutorService executorService;
@@ -48,11 +49,9 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     private Boolean isAscendingList = true;
 
     @Override
-    public void onRemoveSelectedList(List<LinkModel> selectedLinks) {
+    public void onRemoveSelectedList(ArrayList<LinkModel> selectedLinks) {
         if (selectedLinks.size() != 0) {
-            for (LinkModel item : selectedLinks) {
-                removeItem(item);
-            }
+            removeItems(selectedLinks);
         }
     }
 
@@ -63,6 +62,7 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
 
     @Override
     public boolean handleMessage(@NonNull Message msg) {
+        Bundle bundle = msg.getData();
         switch (msg.what) {
             case ADD_ITEM_BY_STRING_CODE:
                 getLinkInfo((String) msg.obj);
@@ -89,6 +89,8 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                 break;
             case REMOVE_LIST_ITEM_CODE:
                 sortedLinks.beginBatchedUpdates();
+
+                ArrayList<LinkModel> removeLinks = bundle.getParcelableArrayList("remove_list_item");
                 for (int i = 0; i < removeLinks.size(); ++i) {
                     sortedLinks.remove(removeLinks.get(i));
                 }
@@ -194,12 +196,16 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     }
 
     public void removeItem(LinkModel item) {
-        removeItems(Collections.singletonList(item));
+        ArrayList<LinkModel> list = new ArrayList<>();
+        list.add(item);
+        removeItems(list);
     }
 
-    public synchronized void removeItems(List<LinkModel> items) {
-        removeLinks = items;
-        sendEmptyMessage(REMOVE_LIST_ITEM_CODE);
+    public synchronized void removeItems(final ArrayList<LinkModel> items) {
+        Bundle bundle = new Bundle();
+        final ArrayList<LinkModel> newArrayList = new ArrayList<>(items);
+        bundle.putParcelableArrayList("remove_list_item", newArrayList);
+        sendMessageWithBundle(REMOVE_LIST_ITEM_CODE, bundle);
     }
 
     public void removeRandom() {
@@ -254,14 +260,21 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     }
 
     private void sendMessage(int code, Object o) {
-        Message msg = new Message();
+        Message msg = backgroundHandler.obtainMessage();
         msg.what = code;
         msg.obj = o;
         backgroundHandler.sendMessage(msg);
     }
 
+    private void sendMessageWithBundle(int code, Bundle b) {
+        Message msg = Message.obtain();
+        msg.what = code;
+        msg.setData(b);
+        backgroundHandler.sendMessage(msg);
+    }
+
     private void sendEmptyMessage(int code) {
-        Message msg = new Message();
+        Message msg = backgroundHandler.obtainMessage();
         msg.what = code;
         backgroundHandler.sendMessage(msg);
     }

@@ -206,7 +206,7 @@ public class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.LinkViewHold
     }
 
     public interface Callback {
-        default void onRemoveSelectedList(List<LinkModel> selectedLinks) {
+        default void onRemoveSelectedList(ArrayList<LinkModel> selectedLinks) {
         }
 
         default void onRemoveAllList() {
