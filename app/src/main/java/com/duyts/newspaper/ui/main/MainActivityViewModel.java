@@ -19,17 +19,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
 import kotlin.random.Random;
-import timber.log.Timber;
 
 public class MainActivityViewModel extends ViewModel implements LinksAdapter.Callback,
         Handler.Callback {
 
+    private static final int ADD_ITEM_LINKS_BY_STRING_CODE = 10001;
     private static final int ADD_ITEM_BY_STRING_CODE = 10002;
     private static final int REMOVE_RANDOM_CODE = 10003;
     private static final int REMOVE_ALL_CODE = 10004;
@@ -64,6 +62,14 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
     public boolean handleMessage(@NonNull Message msg) {
         Bundle bundle = msg.getData();
         switch (msg.what) {
+            case ADD_ITEM_LINKS_BY_STRING_CODE:
+                sortedLinks.beginBatchedUpdates();
+                getLinksListInfo(bundle.getStringArrayList("add_links_list"));
+                sortedLinks.endBatchedUpdates();
+                runOnUiThread(() -> {
+                    sortedLinksMutableLiveData.setValue(sortedLinks);
+                });
+                break;
             case ADD_ITEM_BY_STRING_CODE:
                 getLinkInfo((String) msg.obj);
                 break;
@@ -88,14 +94,16 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
                 });
                 break;
             case REMOVE_LIST_ITEM_CODE:
-                sortedLinks.beginBatchedUpdates();
+//                sortedLinks.beginBatchedUpdates();
 
-                ArrayList<LinkModel> removeLinks = bundle.getParcelableArrayList("remove_list_item");
+                ArrayList<LinkModel> removeLinks =
+                        bundle.getParcelableArrayList("remove_list_item");
                 for (int i = 0; i < removeLinks.size(); ++i) {
                     sortedLinks.remove(removeLinks.get(i));
                 }
-                sortedLinks.endBatchedUpdates();
+//                sortedLinks.endBatchedUpdates();
                 runOnUiThread(() -> {
+                    adapter.notifyItemRangeChanged(0, adapter.getItemCount());
                     sortedLinksMutableLiveData.setValue(sortedLinks);
                     removeLinks.clear();
                 });
@@ -195,6 +203,13 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         sendMessage(ADD_ITEM_BY_STRING_CODE, link);
     }
 
+    public void addLinksList(final ArrayList<String> linksList) {
+        Bundle bundle = new Bundle();
+        final ArrayList<String> newArrayList = new ArrayList<>(linksList);
+        bundle.putStringArrayList("add_links_list", newArrayList);
+        sendMessageWithBundle(ADD_ITEM_LINKS_BY_STRING_CODE, bundle);
+    }
+
     public void removeItem(LinkModel item) {
         ArrayList<LinkModel> list = new ArrayList<>();
         list.add(item);
@@ -225,34 +240,36 @@ public class MainActivityViewModel extends ViewModel implements LinksAdapter.Cal
         sendEmptyMessage(SORT_LIST_CODE);
     }
 
+    private void getLinksListInfo(ArrayList<String> linksList) {
+        for (String link:linksList) {
+            getLinkInfo(link);
+        }
+    }
+
     private void getLinkInfo(String link) {
-        InputStream response = null;
-        try {
-            response = new URL(link).openStream();
-            Scanner scanner = new Scanner(response);
-            String htmlString = scanner.useDelimiter("\\A").next();
-
-            HtmlParser htmlParser = new HtmlParser(link, htmlString);
-
-            String pageTitle = htmlParser.getTitle();
-            String pageImage = htmlParser.getImage();
-            LinkModel itemAdd = new LinkModel(link, pageTitle, pageImage);
-            runOnUiThread(() -> {
-                Timber.e("Add ITEM: %s", itemAdd.getTitle());
-                sortedLinks.add(itemAdd);
-                sortedLinksMutableLiveData.setValue(sortedLinks);
-            });
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
+            InputStream response = null;
             try {
-                if (response != null) {
-                    response.close();
-                }
+                response = new URL(link).openStream();
+                Scanner scanner = new Scanner(response);
+                String htmlString = scanner.useDelimiter("\\A").next();
+
+                HtmlParser htmlParser = new HtmlParser(link, htmlString);
+
+                String pageTitle = htmlParser.getTitle();
+                String pageImage = htmlParser.getImage();
+                LinkModel itemAdd = new LinkModel(link, pageTitle, pageImage);
+                sortedLinks.add(itemAdd);
             } catch (IOException ex) {
                 ex.printStackTrace();
+            } finally {
+                try {
+                    if (response != null) {
+                        response.close();
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
-        }
     }
 
     private void runOnUiThread(Runnable run) {

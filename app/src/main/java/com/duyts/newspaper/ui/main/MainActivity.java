@@ -12,6 +12,7 @@ import com.duyts.newspaper.databinding.ActivityMainBinding;
 import com.duyts.newspaper.ui.BaseActivity;
 import com.duyts.newspaper.ui.component.EditTextDialog;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -79,10 +80,14 @@ public class MainActivity extends BaseActivity implements EditTextDialog.Callbac
 
     private void startRandomAddLinks(int count) {
         new Thread(() -> {
+            ArrayList<String> result = new ArrayList<>();
             for (int i = 0; i < count; i++) {
                 String randomString = listUrl.get(Random.Default.nextInt(listUrl.size()));
+                result.add(randomString);
                 viewModel.addLink(randomString);
             }
+
+//            viewModel.addLinksList(result);
         }).start();
     }
     List<String> listUrl = Arrays.asList(
