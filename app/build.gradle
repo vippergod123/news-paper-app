@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
 }
-
+apply from: '../libs.gradle'
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
@@ -38,7 +38,24 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.navigation:navigation-fragment:2.3.5'
     implementation 'androidx.navigation:navigation-ui:2.3.5'
-    testImplementation 'junit:junit:4.+'
+    implementation 'com.google.android.material:material:1.4.0-rc01'
+    implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation "com.squareup.okhttp3:okhttp:4.9.0"
+    api common.timber
+    implementation 'com.github.bumptech.glide:glide:4.10.0'
+    implementation "com.squareup.picasso:picasso:2.71828"
+//    implementation ("com.github.bumptech.glide:glide:4.11.0@aar") {
+//        transitive = true
+//    }
+//    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+    api androidx.core
+    api androidx.lifecycle
+    api androidx.viewmodel
+    api androidx.livedata
+
+    api androidx.recyclerview
+
+    testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
