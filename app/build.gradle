@@ -40,10 +40,14 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.3.5'
     implementation 'com.google.android.material:material:1.4.0-rc01'
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
-
+    implementation "com.squareup.okhttp3:okhttp:4.9.0"
     api common.timber
-    api common.glide
-
+    implementation 'com.github.bumptech.glide:glide:4.10.0'
+    implementation "com.squareup.picasso:picasso:2.71828"
+//    implementation ("com.github.bumptech.glide:glide:4.11.0@aar") {
+//        transitive = true
+//    }
+//    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
     api androidx.core
     api androidx.lifecycle
     api androidx.viewmodel

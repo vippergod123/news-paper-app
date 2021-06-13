@@ -12,15 +12,16 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/action_remove_all"
-        android:orderInCategory="100"
-        android:title="@string/action_remove_all"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/action_remove"
         android:orderInCategory="100"
         android:icon="@drawable/ic_baseline_delete_24"
         android:title="@string/action_remove"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_remove_all"
+        android:orderInCategory="100"
+        android:title="@string/action_remove_all"
+        app:showAsAction="never" />
+
 </menu>
