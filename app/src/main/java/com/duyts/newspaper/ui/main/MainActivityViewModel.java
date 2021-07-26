@@ -1,4 +1,4 @@
-package com.duyts.newspaper.ui.main;
+cpackage com.duyts.newspaper.ui.main;
 
 import android.os.Bundle;
 import android.os.Handler;
